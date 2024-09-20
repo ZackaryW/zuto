@@ -1,0 +1,33 @@
+[project]
+name = "zuto"
+version = "0.2.0"
+description = "personal windows automator"
+authors = [
+    { name = "ZackaryW", email = "gitzackw@gmail.com" }
+]
+dependencies = [
+    "toml>=0.10.2",
+    "requests>=2.32.3",
+    "pyyaml>=6.0.2",
+    "zuu>=0.1.12",
+    "python-dotenv>=1.0.1",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "reldplayer>=0.2.1",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zuto"]
