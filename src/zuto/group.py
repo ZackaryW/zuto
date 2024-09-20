@@ -94,8 +94,6 @@ class ZutoGroup:
                 func(ctx, state)
 
     def __parse_vars(self, key, args, ctx: ZutoCtxI):
-        if key not in self.cmds:
-            return
 
         cmdobj = self.cmds[key]
         func = cmdobj.func
@@ -150,28 +148,30 @@ class ZutoGroup:
 
         cmdobj: ZutoCmd = self.__cmds[cmd]
 
-        # check scopes
-        if ctx.metaDepth > 1 and not cmdobj.scope:
-            return args
-
         if pathMatter and cmdobj.scope:
             if not match_scope(cmdobj.scope, pathMatter):
                 return args
-
+        
         params = self.__parse_vars(cmd, args, ctx)
 
         # bind children
         if invokeChild:
             for k, v in params.items():
+                if k == "ctx":
+                    continue
+
                 if isinstance(v, str):
                     params[k] = resolve_special_var(v, ctx.env)
+            
+                if isinstance(v, dict) and len(v) == 1:
+                    # check if the key is a cmd
+                    k2 = list(v.keys())[0]
+                    if not ctx.hasCmd(k2):
+                        continue
 
-                resolvedChild = self.__parse_vars(k, v, ctx)
-                if not resolvedChild:
-                    continue
-                result = ctx.runner.run(resolvedChild)
-                if result:
-                    params[k] = result
+                    result = ctx.runner.run(v)
+                    if result:
+                        params[k] = result
 
         # check ctx required
         if "ctx" in inspect.signature(cmdobj.func).parameters:
