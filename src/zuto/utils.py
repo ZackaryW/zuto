@@ -52,9 +52,10 @@ def resolve_string(string: str):
         if string.endswith(".toml"):
             return toml.load(string)
         elif string.endswith(".json"):
-            return json.load(string)
+            with open(string, "r") as f:
+                return json.load(f)
         elif string.endswith(".yaml"):
-            return yaml.load(string)
+            return yaml.safe_load(open(string, "r"))
         else:
             raise ValueError("invalid file type")
 
