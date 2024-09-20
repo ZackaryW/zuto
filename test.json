@@ -1,6 +1,9 @@
 {
     "sleep" : 2,
-    "exec" : "notepad.exe",
+    "exec" : {
+        "cmd": "notepad.exe",
+        "lifetime" : 9
+    },
     "ldrun" : {
         "id" : 1
     }
