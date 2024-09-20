@@ -145,11 +145,11 @@ class ZutoRunner:
         for k, v in instruction.items():
             self.ctx.setStep(k)
             self.ctx.cmd = v
-            logger.debug(f"in context {self.ctx.metakey}")
+            logger.debug(f"-> {self.ctx.metakey}")
             self.ctx.invokeHandler(self.ctx.metakey, "before")
             result = self.ctx.invokeCmd(k, v)
             self.ctx.invokeHandler(self.ctx.metakey, "after")
-            logger.debug(f"out context {self.ctx.metakey}")
+            logger.debug(f"<- {self.ctx.metakey}")
             self.ctx.popStep()
 
         return result
