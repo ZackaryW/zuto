@@ -3,6 +3,8 @@ import inspect
 from types import MappingProxyType
 import typing
 
+from zuto import logger
+
 from .i import ZutoCtxI
 from .model import ZutoCmd
 from .utils import match_scope, resolve_auto, resolve_special_var
@@ -154,30 +156,36 @@ class ZutoGroup:
         
         params = self.__parse_vars(cmd, args, ctx)
 
+        psig =inspect.signature(cmdobj.func).parameters
         # bind children
-        if invokeChild:
-            for k, v in params.items():
-                if k == "ctx":
-                    continue
+        newparams = {}
+        for k, v in params.items():
 
-                if isinstance(v, str):
-                    params[k] = resolve_special_var(v, ctx.env)
+            if isinstance(v, str):
+                newparams[k] = resolve_special_var(v, ctx.env)
+
             
-                if isinstance(v, dict) and len(v) == 1:
-                    # check if the key is a cmd
-                    k2 = list(v.keys())[0]
-                    if not ctx.hasCmd(k2):
-                        continue
+            if ctx.hasCmd(k):
+                result = ctx.runner.run({k: v})
+                if result:
+                    newparams[k] = result
 
-                    result = ctx.runner.run(v)
-                    if result:
-                        params[k] = result
-
+            elif isinstance(v, dict) and len(v) == 1 and invokeChild:
+                # check if the key is a cmd
+                k2 = list(v.keys())[0]
+                if not ctx.hasCmd(k2):
+                    continue
+                result = ctx.runner.run(v)
+                if result:
+                    newparams[k] = result
+            else:
+                newparams[k] = v
+            
         # check ctx required
-        if "ctx" in inspect.signature(cmdobj.func).parameters:
-            params["ctx"] = ctx
-
+        if "ctx" in psig:
+            newparams["ctx"] = ctx
+        
         if cmdobj.resolve_strings:
-            params = resolve_auto(params, ctx.env)
+            newparams = resolve_auto(newparams, ctx.env)
 
-        return cmdobj.func(**params)
+        return cmdobj.func(**newparams)

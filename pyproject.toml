@@ -11,6 +11,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "zuu>=0.1.12",
     "python-dotenv>=1.0.1",
+    "pygetwindow>=0.0.9",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

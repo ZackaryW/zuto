@@ -33,6 +33,7 @@ pyautogui==0.9.54
 pygetwindow==0.0.9
     # via pyautogui
     # via reldplayer
+    # via zuto
 pyldplayer==3.0.4
     # via reldplayer
 pymsgbox==1.0.9

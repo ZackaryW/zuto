@@ -9,7 +9,7 @@ import re
 
 
 @lru_cache(maxsize=4096)
-def match_scope(scope: str, path: str) -> bool:
+def match_scope(path: str, scope: str) -> bool:
     """
     Match the path against the scope pattern using re.match.
 
@@ -134,3 +134,48 @@ def resolve_auto(data: typing.Any, env: dict):
         return resolve_list(data, env)
     elif isinstance(data, dict):
         return resolve_dict(data, env)
+
+def splitstring(string: str):
+    """
+    Splits a string into a list of substrings, handling quoted cases.
+
+    This function splits the input string by whitespace, but treats
+    quoted substrings as a single item. It supports both single and
+    double quotes.
+
+    Args:
+        string (str): The input string to be split.
+
+    Returns:
+        list: A list of substrings.
+
+    Examples:
+        >>> splitstring('abc def "ghi jkl" mno')
+        ['abc', 'def', 'ghi jkl', 'mno']
+        >>> splitstring("a 'b c' d")
+        ['a', 'b c', 'd']
+    """
+    result = []
+    current = []
+    in_quotes = False
+    quote_char = None
+
+    for char in string:
+        if char in ('"', "'") and not in_quotes:
+            in_quotes = True
+            quote_char = char
+        elif char == quote_char and in_quotes:
+            in_quotes = False
+            quote_char = None
+        elif char.isspace() and not in_quotes:
+            if current:
+                result.append(''.join(current))
+                current = []
+        else:
+            current.append(char)
+
+    if current:
+        result.append(''.join(current))
+
+    return result
+    

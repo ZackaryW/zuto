@@ -16,6 +16,10 @@ charset-normalizer==3.3.2
     # via requests
 idna==3.10
     # via requests
+pygetwindow==0.0.9
+    # via zuto
+pyrect==0.2.0
+    # via pygetwindow
 python-dotenv==1.0.1
     # via zuto
 pyyaml==6.0.2

@@ -28,6 +28,10 @@ class ZutoCtx:
         return "/".join(self.__metaPath)
 
     @property
+    def parentMeta(self):
+        return self.__metaVars["/".join(self.__metaPath[:-1])]
+
+    @property
     def metaDepth(self):
         return len(self.__metaPath)
 
@@ -68,7 +72,7 @@ class ZutoCtx:
             if cmd not in group.cmds:
                 continue
 
-            return group.invokeCmd(self, cmd, args, invokeChild)
+            return group.invokeCmd(self, cmd, args, invokeChild=invokeChild)
 
         raise RuntimeError(f"Command '{cmd}' not found")
 
@@ -80,7 +84,7 @@ class ZutoCtx:
 
             return True
         return False
-
+    
     def invokeSignal(
         self,
         name: str,
@@ -93,7 +97,7 @@ class ZutoCtx:
         for group in self.__runner._ZutoRunner__groups:
             group: ZutoGroup
 
-            group.invokeHandler(pattern, state, self)
+            group.invokeHandler(self, pattern, state)
 
 
 class ZutoRunner:
