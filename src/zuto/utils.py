@@ -44,9 +44,12 @@ def match_scope(scope: str, path: str) -> bool:
 def resolve_string(string: str):
     if string.startswith("http"):
         res = requests.get(string)
-        resjson = res.json()
-        if not isinstance(resjson, dict | list):
-            raise ValueError("invalid response")
+        try:
+            resjson = res.json()
+            if not isinstance(resjson, dict | list):
+                raise ValueError("invalid response")
+        except requests.exceptions.JSONDecodeError:
+            return res.text
         return resjson
     if os.path.exists(string):
         if string.endswith(".toml"):
@@ -56,8 +59,9 @@ def resolve_string(string: str):
                 return json.load(f)
         elif string.endswith(".yaml"):
             return yaml.safe_load(open(string, "r"))
-        else:
-            raise ValueError("invalid file type")
+        
+    raise ValueError("invalid file type")
+
 
 
 def resolve_special_var(string: str, env: dict):
@@ -73,9 +77,11 @@ def resolve_special_var(string: str, env: dict):
 
     if string.startswith("${") and string.endswith("}"):
         stringStripped = string[2:-1].strip()
-        res = resolve_string(stringStripped)
-        if res:
-            return res
+        try:
+            return resolve_string(stringStripped)
+        except: #noqa
+            pass
+        
 
     # if multiple ${
     result = string
