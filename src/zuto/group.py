@@ -44,6 +44,10 @@ class ZutoGroup:
     def cmd(self, name: str = None, scope: str = None, resolve_strings: bool = True):
         def decorator(func):
             name2 = name if name else func.__name__
+            if name2 in ["val", "cmd"]:
+                raise ValueError("reserved command name")
+            if name2.startswith("_"):
+                raise ValueError("command name cannot start with '_'")
             self.__cmds[name2] = ZutoCmd(
                 name=name2, func=func, scope=scope, resolve_strings=resolve_strings
             )
@@ -117,11 +121,13 @@ class ZutoGroup:
                     else self.__props[p]()
                 )
 
-        if (len(psig) == 2 and "ctx" in psig) or (len(psig) == 1 and "ctx" not in psig):
+        if (
+            not isinstance(args, dict) and 
+            ((len(psig) == 2 and "ctx" in psig) 
+            or (len(psig) == 1 and "ctx" not in psig))
+        ):
             for p in inspect.signature(func).parameters:
-                if p == "ctx":
-                    params[p] = ctx
-                else:
+                if p != "ctx":
                     params[p] = args
 
             return params
@@ -148,6 +154,9 @@ class ZutoGroup:
         if cmd not in self.__cmds:
             return args
 
+        if cmd =="exec":
+            pass
+
         cmdobj: ZutoCmd = self.__cmds[cmd]
 
         if pathMatter and cmdobj.scope:
@@ -158,34 +167,52 @@ class ZutoGroup:
 
         psig =inspect.signature(cmdobj.func).parameters
         # bind children
+        unfilled = list([k for k, v in psig.items() if v.default == inspect.Parameter.empty])
         newparams = {}
         for k, v in params.items():
 
             if isinstance(v, str):
                 newparams[k] = resolve_special_var(v, ctx.env)
 
-            
-            if ctx.hasCmd(k):
-                result = ctx.runner.run({k: v})
-                if result:
-                    newparams[k] = result
+            hasCmd = ctx.hasCmd(k)
+            childInvokable = isinstance(v, dict) and len(v) == 1 and invokeChild
+            if not hasCmd and not childInvokable:
+                newparams[k] = v
+                if k in unfilled:
+                    unfilled.remove(k)
+                continue
 
-            elif isinstance(v, dict) and len(v) == 1 and invokeChild:
+            if hasCmd:
+                result = ctx.runner.run({k: v})
+                
+            else:
                 # check if the key is a cmd
                 k2 = list(v.keys())[0]
                 if not ctx.hasCmd(k2):
                     continue
                 result = ctx.runner.run(v)
-                if result:
-                    newparams[k] = result
-            else:
-                newparams[k] = v
             
+            if not result:
+                continue
+
+            if k not in unfilled and len(unfilled) == 1:
+                newparams[unfilled[0]] = result
+                unfilled.remove(unfilled[0])
+            else:
+                newparams[k] = result
+                unfilled.remove(k)
+        
         # check ctx required
         if "ctx" in psig:
             newparams["ctx"] = ctx
+            unfilled.remove("ctx")
         
         if cmdobj.resolve_strings:
             newparams = resolve_auto(newparams, ctx.env)
+
+
+        # filter
+        newparams = {k : v for k, v in newparams.items() if k in psig}
+        assert len(unfilled) == 0, f"Unfilled params: {unfilled}"
 
         return cmdobj.func(**newparams)
