@@ -9,7 +9,7 @@ dependencies = [
     "toml>=0.10.2",
     "requests>=2.32.3",
     "pyyaml>=6.0.2",
-    "zuu>=0.1.12",
+    "zuu==0.1.12",
     "python-dotenv>=1.0.1",
     "pygetwindow>=0.0.9",
 ]
